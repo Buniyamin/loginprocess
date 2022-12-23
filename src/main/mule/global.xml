@@ -1,0 +1,517 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+	<configuration-properties doc:name="Configuration properties" doc:id="148e39c8-042c-422b-bdf7-2353266136d3" file="config.yaml" />
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="a6945dce-8689-41c9-90fd-7f1555bbe490" >
+		<http:listener-connection host="0.0.0.0" port="${http.port}" />
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="a57895dc-8708-4e20-8ae9-bb430a101a8e" >
+		<http:request-connection host="${request.host}" port="${request.port}" />
+	</http:request-config>
+	<configuration doc:name="Configuration" doc:id="f64ebf4a-ebd0-4751-bebd-a45ef47c3866" defaultErrorHandler-ref="globalError_Handler" />
+	<file:config name="File_Config" doc:name="File Config" doc:id="e30fc3fc-25f6-4d25-bf55-0c203540ed96" >
+		<file:connection workingDir="E:\timesheet" />
+	</file:config>
+	<error-handler name="globalError_Handler" doc:id="5840e28b-c79e-4f45-b4da-d8e58083f4a5" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="a29d0db2-a3e7-42dd-817d-33c6a57e2bef" type="HTTP:BAD_REQUEST" >
+			<ee:transform doc:name="Copy_of_Transform Message" doc:id="90789342-f12e-4825-b862-43f253e3732f" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	error: "Bad request...Please check the request",
+    message: error.description
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<parse-template doc:name="Copy_of_Parse Template" doc:id="3a56193e-3039-4161-89da-1f8a7ac2ad70" outputMimeType="text/html" >
+				<content >&lt;html&gt;
+&lt;body&gt;
+&lt;style&gt;
+body {
+  font-size: 100%;
+}
+
+p {
+  font-size: 3em;
+}
+&lt;/style&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.error]&lt;/b&gt; &lt;/p&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.message]&lt;/b&gt; &lt;/p&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</content>
+			</parse-template>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="a27c6c6f-4419-4076-a555-c3f08b5c3eb2" type="HTTP:INTERNAL_SERVER_ERROR" >
+			<ee:transform doc:name="Copy_of_Transform Message" doc:id="21866ea3-2f4f-46c2-ba26-6f352f19751a" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	error: "Internal server error",
+    message: error.description
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<parse-template doc:name="Copy_of_Parse Template" doc:id="f334edbf-4fa0-4292-8485-249a30fe52c1" outputMimeType="text/html" >
+				<content >&lt;html&gt;
+&lt;body&gt;
+&lt;style&gt;
+body {
+  font-size: 100%;
+}
+
+p {
+  font-size: 3em;
+}
+&lt;/style&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.error]&lt;/b&gt; &lt;/p&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.message]&lt;/b&gt; &lt;/p&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</content>
+			</parse-template>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="6e30acb1-b64b-4123-8780-baed843556f2" type="HTTP:NOT_ACCEPTABLE" >
+			<ee:transform doc:name="Copy_of_Transform Message" doc:id="0a0c6628-63b1-4c0c-b4d0-4b235b0d1ffd" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	error: "request not acceptable",
+    message: error.description
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<parse-template doc:name="Copy_of_Parse Template" doc:id="66be17a1-40a8-4169-9596-131e72ea9d08" outputMimeType="text/html" >
+				<content >&lt;html&gt;
+&lt;body&gt;
+&lt;style&gt;
+body {
+  font-size: 100%;
+}
+
+p {
+  font-size: 3em;
+}
+&lt;/style&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.error]&lt;/b&gt; &lt;/p&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.message]&lt;/b&gt; &lt;/p&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</content>
+			</parse-template>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="54f5e2a6-265c-464b-a65c-47c57e7c4467" type="HTTP:RETRY_EXHAUSTED" >
+			<ee:transform doc:name="Copy_of_Transform Message" doc:id="c4f95a17-58cf-499b-a215-2bb4058ee39b" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	error: "service taking longer than usual please try again later",
+    message: error.description
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<parse-template doc:name="Copy_of_Parse Template" doc:id="93b2e09b-3088-4188-a6d1-09838d80400c" outputMimeType="text/html" >
+				<content >&lt;html&gt;
+&lt;body&gt;
+&lt;style&gt;
+body {
+  font-size: 100%;
+}
+
+p {
+  font-size: 3em;
+}
+&lt;/style&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.error]&lt;/b&gt; &lt;/p&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.message]&lt;/b&gt; &lt;/p&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</content>
+			</parse-template>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="1310f1d0-e1f7-4144-80c9-0aedd711ce54" type="HTTP:SERVICE_UNAVAILABLE" >
+			<ee:transform doc:name="Copy_of_Transform Message" doc:id="ff9f5ac3-16b9-4cfa-b216-814f54bd88d6" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	error: "service unavailable",
+    message: error.description
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<parse-template doc:name="Copy_of_Parse Template" doc:id="51bd432d-7912-4b5b-ae0a-ae433ff67110" outputMimeType="text/html" >
+				<content >&lt;html&gt;
+&lt;body&gt;
+&lt;style&gt;
+body {
+  font-size: 100%;
+}
+
+p {
+  font-size: 3em;
+}
+&lt;/style&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.error]&lt;/b&gt; &lt;/p&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.message]&lt;/b&gt; &lt;/p&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</content>
+			</parse-template>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="14a39f82-6a31-463b-9ef3-40389e999ef7" type="HTTP:TOO_MANY_REQUESTS" >
+			<ee:transform doc:name="Copy_of_Transform Message" doc:id="2c9e9cf5-d1d4-4357-9a7d-45dfb123c877" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	error: "unable to process the service please try again later",
+    message: error.description
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<parse-template doc:name="Copy_of_Parse Template" doc:id="4f5a9cb0-331f-4841-a013-c6421d2a3ace" outputMimeType="text/html" >
+				<content >&lt;html&gt;
+&lt;body&gt;
+&lt;style&gt;
+body {
+  font-size: 100%;
+}
+
+p {
+  font-size: 3em;
+}
+&lt;/style&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.error]&lt;/b&gt; &lt;/p&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.message]&lt;/b&gt; &lt;/p&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</content>
+			</parse-template>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="20bccd74-5918-480a-92e5-fb066c8d5b35" type="HTTP:TIMEOUT" >
+			<ee:transform doc:name="Copy_of_Transform Message" doc:id="aaf851b7-c251-4285-ba52-346578c7ee65" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	error: "unable to process the service please try again later",
+    message: error.description
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<parse-template doc:name="Copy_of_Parse Template" doc:id="71c56297-2cbb-4a27-8b00-39c2027f7115" outputMimeType="text/html" >
+				<content >&lt;html&gt;
+&lt;body&gt;
+&lt;style&gt;
+body {
+  font-size: 100%;
+}
+
+p {
+  font-size: 3em;
+}
+&lt;/style&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.error]&lt;/b&gt; &lt;/p&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.message]&lt;/b&gt; &lt;/p&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</content>
+			</parse-template>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="bd9ef148-02a5-4de3-810a-71d6237384de" type="HTTP:BAD_GATEWAY" >
+			<ee:transform doc:name="Copy_of_Transform Message" doc:id="ddbf6c3a-5a76-4e30-8d16-e2f5e7170d14" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	error: "Bad gateway",
+    message: error.description
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<parse-template doc:name="Copy_of_Parse Template" doc:id="89b7049e-4f89-4491-8399-a97759c6a98e" outputMimeType="text/html" >
+				<content >&lt;html&gt;
+&lt;body&gt;
+&lt;style&gt;
+body {
+  font-size: 100%;
+}
+
+p {
+  font-size: 3em;
+}
+&lt;/style&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.error]&lt;/b&gt; &lt;/p&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.message]&lt;/b&gt; &lt;/p&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</content>
+			</parse-template>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="7919ad7a-4302-4d79-9df0-3e3b800d9da8" type="HTTP:CLIENT_SECURITY" >
+			<ee:transform doc:name="Copy_of_Transform Message" doc:id="841660cd-e342-4cd1-b1c3-b5473a7b260a" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	error: "Unauthorized Access",
+    message: error.description
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<parse-template doc:name="Copy_of_Parse Template" doc:id="49140834-2db8-41d5-ab71-f7d09941449d" outputMimeType="text/html" >
+				<content >&lt;html&gt;
+&lt;body&gt;
+&lt;style&gt;
+body {
+  font-size: 100%;
+}
+
+p {
+  font-size: 3em;
+}
+&lt;/style&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.error]&lt;/b&gt; &lt;/p&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.message]&lt;/b&gt; &lt;/p&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</content>
+			</parse-template>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="594a41a0-6303-481b-af46-1e0846ffd3c5" type="HTTP:CONNECTIVITY" >
+			<ee:transform doc:name="Copy_of_Transform Message" doc:id="231c5d7a-3c8a-4454-a4a9-6831035862d3" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	error: "unable to connect server please contact admin",
+    message: error.description
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<parse-template doc:name="Copy_of_Parse Template" doc:id="ca949098-5b10-45a2-92f3-41d2ad86935b" outputMimeType="text/html" >
+				<content >&lt;html&gt;
+&lt;body&gt;
+&lt;style&gt;
+body {
+  font-size: 100%;
+}
+
+p {
+  font-size: 3em;
+}
+&lt;/style&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.error]&lt;/b&gt; &lt;/p&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.message]&lt;/b&gt; &lt;/p&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</content>
+			</parse-template>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="f5662088-333a-4b1d-b437-011b23f57f8c" type="HTTP:FORBIDDEN" >
+			<ee:transform doc:name="Copy_of_Transform Message" doc:id="a4929503-9a9c-43a2-83d5-3c1c22b03a52" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	error: "Forbidden",
+    message: error.description
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<parse-template doc:name="Copy_of_Parse Template" doc:id="c8caf112-75f6-4605-ac12-59e11c015bb3" outputMimeType="text/html" >
+				<content >&lt;html&gt;
+&lt;body&gt;
+&lt;style&gt;
+body {
+  font-size: 100%;
+}
+
+p {
+  font-size: 3em;
+}
+&lt;/style&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.error]&lt;/b&gt; &lt;/p&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.message]&lt;/b&gt; &lt;/p&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</content>
+			</parse-template>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="f6da21b5-aeba-4494-a1de-7e3daafdbf2b" type="HTTP:METHOD_NOT_ALLOWED" >
+			<ee:transform doc:name="Copy_of_Transform Message" doc:id="248a3c92-fa3a-4278-820b-f0708f1f0f66" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	error: "method not allowed",
+    message: error.description
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<parse-template doc:name="Copy_of_Parse Template" doc:id="9747c152-1d8c-4ffb-80e4-c52404054947" outputMimeType="text/html" >
+				<content >&lt;html&gt;
+&lt;body&gt;
+&lt;style&gt;
+body {
+  font-size: 100%;
+}
+
+p {
+  font-size: 3em;
+}
+&lt;/style&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.error]&lt;/b&gt; &lt;/p&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.message]&lt;/b&gt; &lt;/p&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</content>
+			</parse-template>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="11e9e8f5-3ef4-4cbc-8fb4-91eff72a84a3" type="HTTP:NOT_FOUND" >
+			<ee:transform doc:name="Copy_of_Transform Message" doc:id="96aad3f7-af0d-43b2-a0f8-fcec617eadd8" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	error: "Resource not found",
+    message: error.description
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<parse-template doc:name="Copy_of_Parse Template" doc:id="c642121f-c8e5-4e69-ab69-17594d85238b" outputMimeType="text/html" >
+				<content >&lt;html&gt;
+&lt;body&gt;
+&lt;style&gt;
+body {
+  font-size: 100%;
+}
+
+p {
+  font-size: 3em;
+}
+&lt;/style&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.error]&lt;/b&gt; &lt;/p&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.message]&lt;/b&gt; &lt;/p&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</content>
+			</parse-template>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="7446cbf9-d13b-45f8-bf8a-eb5b74bcd0e7" type="HTTP:UNAUTHORIZED" >
+			<ee:transform doc:name="Copy_of_Transform Message" doc:id="c40f8a32-83b2-4e87-9575-63d7058f795e" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	error: "Unauthorized Access",
+    message: error.description
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<parse-template doc:name="Copy_of_Parse Template" doc:id="f422e3e6-210b-48fb-abd6-92de14906379" outputMimeType="text/html" >
+				<content >&lt;html&gt;
+&lt;body&gt;
+&lt;style&gt;
+body {
+  font-size: 100%;
+}
+
+p {
+  font-size: 3em;
+}
+&lt;/style&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.error]&lt;/b&gt; &lt;/p&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.message]&lt;/b&gt; &lt;/p&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</content>
+			</parse-template>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="e12f5a58-630d-483f-b312-f5fe2baa6c80" type="HTTP:UNSUPPORTED_MEDIA_TYPE" >
+			<ee:transform doc:name="Copy_of_Transform Message" doc:id="720c16b9-6b15-40b0-9e7e-df8412e8c1d7" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	error: "Unsupported media file",
+    message: error.description
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<parse-template doc:name="Copy_of_Parse Template" doc:id="ecd89c97-9d54-45f5-ad6f-e838e21b3bee" outputMimeType="text/html" >
+				<content >&lt;html&gt;
+&lt;body&gt;
+&lt;style&gt;
+body {
+  font-size: 100%;
+}
+
+p {
+  font-size: 3em;
+}
+&lt;/style&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.error]&lt;/b&gt; &lt;/p&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;&lt;b&gt;#[payload.message]&lt;/b&gt; &lt;/p&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</content>
+			</parse-template>
+		</on-error-propagate>
+	</error-handler>
+</mule>

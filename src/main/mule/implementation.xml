@@ -1,0 +1,738 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:java="http://www.mulesoft.org/schema/mule/java"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/java http://www.mulesoft.org/schema/mule/java/current/mule-java.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+	<flow name="loggingFlow" doc:id="952e32c4-c3a7-43b1-8e8d-4dfc7ce8c637" >
+		<ee:transform doc:name="dataToPostSystemApi" doc:id="3bc616ff-8fbe-4b13-8f84-b6be87da6858" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	name: (attributes.queryParams.action splitBy  ",")[0],
+	action: (attributes.queryParams.action splitBy  ",")[1],
+	date: now() as Date,
+	time: now() as Time {format: "HH:mm:ss"}
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="logg" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	name: (attributes.queryParams.action splitBy  ",")[0],
+	action: (attributes.queryParams.action splitBy  ",")[1],
+	date: now() as Date,
+	time: now() as Time {format: "HH:mm:ss"}
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<choice doc:name="chooseAction" doc:id="16ac06b6-3410-45a6-8f9a-1b99ea4576b2" >
+			<when expression='#[vars.logg.action == "logged in"]' >
+				<http:request method="POST" doc:name="requestToSystemApi_loginCheck" doc:id="2d22b347-f042-412b-b949-78012a78b727" config-ref="HTTP_Request_configuration" path="/api/logincheck" >
+					<http:body ><![CDATA[#[vars.logg]]]></http:body>
+					<http:headers ><![CDATA[#[{
+	client_id: "1234",
+	client_secret: "1234"
+}]]]></http:headers>
+				</http:request>
+				<choice doc:name="check_loginExist" doc:id="9250961d-3ca4-445b-971c-141b84663725" >
+					<when expression='#[payload."logged in" == null]' >
+						<http:request method="POST" doc:name="postActionToSystem" doc:id="e0f6405d-d579-4422-a353-8bac02add75f" config-ref="HTTP_Request_configuration" path="/api/logininsert" >
+							<http:body ><![CDATA[#[vars.logg]]]></http:body>
+							<http:headers ><![CDATA[#[{
+	client_id: "1234",
+	client_secret: "1234"
+}]]]></http:headers>
+						</http:request>
+						<ee:transform doc:name="verifyingResponse" doc:id="fc234ec6-9853-454e-815f-0d220dcf79fd">
+							<ee:message>
+								<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    result:
+if(payload.affectedRows == 1 ) "logged in" else "unable to process request pease check log"
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+						<parse-template doc:name="response" doc:id="f23af5b7-f3f5-40fa-8c01-ce9257d96913" outputMimeType="text/html">
+							<content >&lt;html&gt;
+&lt;body&gt;
+&lt;style&gt;
+body {
+  font-size: 100%;
+}
+
+p {
+  font-size: 3em;
+}
+&lt;/style&gt;
+&lt;style&gt;
+body  {
+  background-image: url(&quot;https://wallpaperaccess.com/full/1393334.jpg&quot;);
+  background-color: #aaaaaa;
+  background-repeat: no-repeat;
+  background-size: 1500px 900px;
+}
+&lt;/style&gt;
+
+&lt;p style=&quot;font-family:verdana; color:white;&quot;&gt;&lt;b&gt;#[payload.result]&lt;/b&gt; &lt;/p&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</content>
+						</parse-template>
+					</when>
+					<otherwise >
+						<parse-template doc:name="response" doc:id="428bccd4-30ad-48dc-96ae-394312d3d607" outputMimeType="text/html">
+							<content >&lt;html&gt;
+&lt;body&gt;
+&lt;style&gt;
+body {
+  font-size: 70%;
+}
+
+h1 {
+  font-size: 3em;
+}
+
+h2 {
+  font-size: 1.875em;
+}
+
+p {
+  font-size: 3em;
+}
+&lt;/style&gt;
+&lt;style&gt;
+body  {
+  background-image: url(&quot;https://st.depositphotos.com/1431107/2884/v/950/depositphotos_28842149-stock-illustration-oops.jpg&quot;);
+  background-color: #aaaaaa;
+  background-repeat: no-repeat;
+  background-size: 1500px 900px;
+}
+&lt;/style&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;you'r Already got Logged in &lt;/p&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</content>
+						</parse-template>
+					</otherwise>
+				</choice>
+			</when>
+			<when expression='#[vars.logg.action == "logged off"]' >
+				<http:request method="POST" doc:name="postActionToSystemApi" doc:id="bfa8f89a-8a0c-49eb-8f0f-7ebe242f5ad4" config-ref="HTTP_Request_configuration" path="/api/logoutupdate" >
+					<http:body ><![CDATA[#[vars.logg]]]></http:body>
+					<http:headers ><![CDATA[#[{
+	client_id: "1234",
+	client_secret: "1234"
+}]]]></http:headers>
+				</http:request>
+				<ee:transform doc:name="verifyResponse" doc:id="262f560c-6ac6-4539-9089-5e0de0721f42">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    result:
+if(payload.affectedRows == 1 ) "logged off" else "unable to process request pease check log"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<parse-template doc:name="response" doc:id="f7532fc3-039c-45a2-86d7-da8837d5fe8a" outputMimeType="text/html">
+					<content>&lt;html&gt;
+&lt;body&gt;
+&lt;style&gt;
+body {
+  font-size: 70%;
+}
+
+h1 {
+  font-size: 3em;
+}
+
+h2 {
+  font-size: 1.875em;
+}
+
+p {
+  font-size: 3em;
+}
+&lt;/style&gt;
+&lt;style&gt;
+body  {
+  background-image: url(&quot;https://a-static.besthdwallpaper.com/laptop-wallpaper-1280x768-16851_13.jpg&quot;);
+  background-color: #aaaaaa;
+}
+&lt;/style&gt;
+
+&lt;p style=&quot;font-family:verdana; color:white;&quot;&gt;#[payload.result] &lt;/p&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</content>
+				</parse-template>
+			</when>
+			<when expression='#[vars.logg.action == "break"]' >
+				<http:request method="POST" doc:name="postActionToSystemApi" doc:id="ff749ca0-ad6f-479d-a22d-7a1dff5eb551" config-ref="HTTP_Request_configuration" path="/api/breakupdate" >
+					<http:body ><![CDATA[#[vars.logg]]]></http:body>
+					<http:headers ><![CDATA[#[{
+	client_id: "1234",
+	client_secret: "1234"
+}]]]></http:headers>
+				</http:request>
+				<ee:transform doc:name="verifyResponse" doc:id="363a075f-ff50-44e9-92c3-37941dc57c26">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    result:
+if(payload.affectedRows == 1) "Have a break" else "unable to process request pease check log"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<parse-template doc:name="response" doc:id="685bbf25-dc10-4ec3-9a87-0d2e37659a23" outputMimeType="text/html">
+					<content >&lt;html&gt;
+&lt;body&gt;
+&lt;style&gt;
+body {
+  font-size: 100%;
+}
+
+h1 {
+  font-size: 4em;
+}
+
+h2 {
+  font-size: 1.875em;
+}
+
+p {
+  font-size: 3em;
+}
+&lt;/style&gt;
+&lt;style&gt;
+body  {
+  background-image: url(&quot;https://c1.wallpaperflare.com/preview/644/560/36/business-cafe-coffee-drinking.jpg&quot;);
+  background-color: #aaaaaa;
+  background-repeat: no-repeat;
+  background-size: 1500px 900px;
+}
+&lt;/style&gt;
+
+
+&lt;p style=&quot;font-family:verdana; color:indigo;&quot;&gt;&lt;b&gt;#[payload.result] &lt;/b&gt;&lt;/p&gt;
+
+&lt;/body&gt;</content>
+				</parse-template>
+			</when>
+			<otherwise >
+				<http:request method="POST" doc:name="postActionToSystemApi" doc:id="700471a7-11ef-4cae-b79d-e28ce50acdd8" config-ref="HTTP_Request_configuration" path="/api/backupdate" >
+					<http:body ><![CDATA[#[vars.logg]]]></http:body>
+					<http:headers ><![CDATA[#[{
+	client_id: "1234",
+	client_secret: "1234"
+}]]]></http:headers>
+				</http:request>
+				<ee:transform doc:name="verifyResponse" doc:id="e6e70e74-5293-4d85-b6d9-e883fc7dd50d">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    result:
+if(payload.affectedRows == 1 ) "Back" else "unable to process request pease check log"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<parse-template doc:name="response" doc:id="11aa778a-d9af-42e0-863b-9dfbeaf941c6" outputMimeType="text/html">
+					<content >&lt;html&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;body&gt;
+&lt;style&gt;
+body {
+  font-size: 70%;
+}
+p {
+  font-size: 3em;
+}
+&lt;/style&gt;
+
+&lt;p style=&quot;font-family:verdana; color:black;&quot;&gt;#[payload.result] &lt;/p&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</content>
+				</parse-template>
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="getlogFlow" doc:id="2ced242e-52cb-47d2-829e-fff78682d6e0" >
+		<ee:transform doc:name="setName&amp;Month" doc:id="ca1f85b2-5211-42a7-bdc9-6f580a203ce4" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{	
+	name: attributes.queryParams.name,
+	month: attributes.queryParams.month
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="GET" doc:name="requestToSystemApi" doc:id="a9a188f1-2d9b-42d7-97c8-420ee4ee3bdb" config-ref="HTTP_Request_configuration" path="/api/logfromdatabase" >
+			<http:headers ><![CDATA[#[{
+	client_id: "1234",
+	client_secret: "1234"
+}]]]></http:headers>
+			<http:query-params ><![CDATA[#[{
+	name: payload.name,
+	month: payload.month
+}]]]></http:query-params>
+		</http:request>
+		<ee:transform doc:name="formatLogData" doc:id="d1365555-001e-4449-9ada-6804dd35323a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map ((item, index) -> 
+{
+    "date": if(item.date == null) "-" else item.date as Date,
+    "logged in": if(item."logged in" == null) "-" else item."logged in" as Time replace "Z" with "",
+    "logged off": if(item."logged off" == null) "-" else item."logged off" as Time replace "Z" with "",
+    "break": if(item.break == null) "-" else item.break as Time replace "Z" with "",
+    "back": if(item.back == null) "-" else item.back as Time replace "Z" with "" 
+}
+
+)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="createTable" doc:id="0973aec1-d271-4fa7-b89e-2b440e6146b1" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+{
+    table @(style: "width: 100%; border-collapse: collapse; font-family: Arial, Helvetica, sans-serif" ): {
+        tr @(bgcolor: "#04446D",style: "color: white !important; font-size:20px; border: 1px solid #ddd; padding-top: 12px; padding-bottom: 12px;
+  padding: 8px;"): {
+            th @() : "Date",
+            th @() : "Logged in" ,
+            th @() : "Logged off",
+            th @() : "Break",
+            th @() : "Back"
+            
+        },
+         (payload map (item, index) -> {
+            tr @(align:"center", style: "color: #666666; font-size:20px; font-weight: 500; width:50%; padding-top: 12px; padding-bottom: 12px"): 
+            {
+                td @(): item."date",
+                td @(): item."logged in",
+                td @(): item."logged off",
+                td @(): item."break",
+                td @(): item."back"
+            }
+        })
+        }
+        }]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<parse-template doc:name="response" doc:id="caac90ad-b106-4e28-a7b9-5e018c020273" outputMimeType="text/html">
+			<content >&lt;html&gt;
+  &lt;head&gt;&lt;/head&gt; 
+  &lt;body&gt;
+  #[payload]
+&lt;br /&gt;&lt;br /&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</content>
+		</parse-template>
+	</flow>
+	<flow name="logbydateFlow" doc:id="99a28d67-22e0-47df-bfc0-5251ea116c86" >
+		<ee:transform doc:name="setDate" doc:id="086ff140-2d45-4e62-95f8-cdc4f88f5e74" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	date: attributes.queryParams.date
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="GET" doc:name="requestToSystemApi" doc:id="7e234434-88db-4872-b22c-993e517904ec" config-ref="HTTP_Request_configuration" path="/api/logbydatefromdatabase" >
+			<http:headers ><![CDATA[#[{
+	client_id: "1234",
+	client_secret: "1234"
+}]]]></http:headers>
+			<http:query-params ><![CDATA[#[{
+	date: payload.date
+}]]]></http:query-params>
+		</http:request>
+		<ee:transform doc:name="formatLogData" doc:id="c8f6f4ca-a378-4539-ba9c-fe1a1deaa190" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map ((item, index) -> 
+{
+    "name": if(item.name == null) "-" else item.name,
+    "date": if(item.date == null) "-" else item.date as Date,
+    "logged in": if(item."logged in" == null) "-" else item."logged in" as Time replace "Z" with "",
+    "logged off": if(item."logged off" == null) "-" else item."logged off" as Time replace "Z" with "",
+    "break": if(item.break == null) "-" else item.break as Time replace "Z" with "",
+    "back": if(item.back == null) "-" else item.back as Time replace "Z" with ""
+}
+)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="createTable" doc:id="6c7856f5-46ae-416b-9977-828378e7f6b3" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+{
+    table @(style: "width: 100%; border-collapse: collapse; font-family: Arial, Helvetica, sans-serif" ): {
+        tr @(bgcolor: "#04446D",style: "color: white !important; font-size:20px; border: 1px solid #ddd; padding-top: 12px; padding-bottom: 12px;
+  padding: 8px;"): {
+            th @() : "Name",
+            th @() : "Date",
+            th @() : "Logged in" ,
+            th @() : "Logged off",
+            th @() : "Break",
+            th @() : "Back"
+            
+        },
+         (payload map (item, index) -> {
+            tr @(align:"center", style: "color: #666666; font-size:20px; font-weight: 500; width:50%; padding-top: 12px; padding-bottom: 12px"): 
+            {
+                td @(): item."name",
+                td @(): item."date",
+                td @(): item."logged in",
+                td @(): item."logged off",
+                td @(): item."break",
+                td @(): item."back"
+            }
+        })
+        }
+        }]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<parse-template doc:name="response" doc:id="40afd276-636d-47b9-bf35-e05c1a5e3a1f" outputMimeType="text/html">
+			<content >&lt;html&gt;
+  &lt;head&gt;&lt;/head&gt;
+  &lt;body&gt;
+  #[payload]
+&lt;br /&gt;&lt;br /&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</content>
+		</parse-template>
+	</flow>
+	<flow name="statusFlow" doc:id="d433f285-a42e-40bc-a3d3-5fd73971baa5" >
+		<ee:transform doc:name="setCurrentDate" doc:id="be9924c8-9d98-42d9-b0cb-f937a0737a5d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	date: now() as Date
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="GET" doc:name="requestToSystemApi" doc:id="93466c1f-21b8-4b58-aa2e-2d618cb62800" config-ref="HTTP_Request_configuration" path="/api/logbydatefromdatabase" >
+			<http:headers ><![CDATA[#[{
+	client_id: "1234",
+	client_secret: "1234"
+}]]]></http:headers>
+			<http:query-params ><![CDATA[#[{
+	date: payload.date
+}]]]></http:query-params>
+		</http:request>
+		<ee:transform doc:name="createTable" doc:id="b9f25153-c8a7-4cd6-aa16-c066464e48e9" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+{
+    table @(style: "width: 100%; border-collapse: collapse; font-family: Arial, Helvetica, sans-serif" ): {
+        tr @(bgcolor: "#04446D",style: "color: white !important; font-size:20px; border: 1px solid #ddd; padding-top: 12px; padding-bottom: 12px;
+  padding: 8px;"): {
+            th @() : "Name",
+            th @() : "Status"
+            
+        },
+         (payload map (item, index) -> {
+            tr  @(align:"center", style: "color: #666666; font-size:20px; font-weight: 500; width:50%; padding-top: 12px; padding-bottom: 12px"): 
+            {
+                td @(): item."name",
+                td @():  "status": if(item."logged in" != null and item."logged off" == null and item.break == null and item.back == null ) "active" else if(item.break != null and item.back == null) "not active(break)" else if(item.break != null and item.back != null and item."logged off" == null) "active" else if(item."logged off" != null) "not active(logged off)" else "not logged in"
+            }
+        })
+        }
+        }]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<parse-template doc:name="response" doc:id="020636c6-aa92-4be7-b1eb-41df2e0a6fa0" outputMimeType="text/html">
+			<content >&lt;html&gt;
+  &lt;head&gt;&lt;/head&gt;
+ &lt;p&gt;status&lt;/p&gt; 
+  &lt;body&gt;
+  #[payload]
+&lt;br /&gt;&lt;br /&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</content>
+		</parse-template>
+	</flow>
+	<flow name="timesheetFlow" doc:id="096c95a0-c008-4ad0-85da-5c584ab40621" >
+		<http:listener doc:name="Listener" doc:id="a186bb6c-845b-42b6-ad87-547d1ddef377" config-ref="HTTP_Listener_config" path="/timesheet"/>
+		<ee:transform doc:name="getDate,employeeInfo" doc:id="f3d73fc4-61b7-4cbd-bf40-4c261cdfddb8" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="dates" ><![CDATA[%dw 2.0
+import * from dw::core::Dates
+output application/json
+var day = attributes.queryParams.year ++ "-" ++ attributes.queryParams.month ++ "-01"
+var firstDay = (atBeginningOfWeek(atBeginningOfMonth(day)) + |P1D|) as Date
+var lastDay = (atBeginningOfWeek(atBeginningOfMonth(day) + |P1M| - |P1D|) + |P7D|) as Date
+var numOfDays = daysBetween(firstDay,lastDay)
+---
+(0 to numOfDays) map (firstDay + ("P$($$)D" as Period))]]></ee:set-variable>
+				<ee:set-variable variableName="employeeInfo" ><![CDATA[%dw 2.0
+import * from module::employee
+var name = attributes.queryParams.name
+output application/json
+---
+getEmployee(employee, name)]]></ee:set-variable>
+				<ee:set-variable variableName="req_month" ><![CDATA[%dw 2.0
+output application/json
+var day = attributes.queryParams.year ++ "-"++ attributes.queryParams.month ++ "-01"
+var specified_date = day as Date
+---
+specified_date as Date {format: "MMMM"}]]></ee:set-variable>
+				<ee:set-variable variableName="req_day" ><![CDATA[%dw 2.0
+output application/json
+var day = attributes.queryParams.year ++ "-"++ attributes.queryParams.month ++ "-01"
+var specified_date = day as Date
+---
+specified_date as Date]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<http:request method="GET" doc:name="requestToSystemApi" doc:id="acb7dd92-aa41-4f42-b57b-06d457ff1ba1" config-ref="HTTP_Request_configuration" path="/api/logfromdatabase">
+			<http:headers ><![CDATA[#[{
+	client_id: "1234",
+	client_secret: "1234"
+}]]]></http:headers>
+			<http:query-params ><![CDATA[#[{
+	name: attributes.queryParams.name,
+	month: vars.req_month
+}]]]></http:query-params>
+		</http:request>
+		<ee:transform doc:name="responseFromSystemApi" doc:id="94eb5088-1830-458a-b6d8-5300d1334fd4" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map (
+    {
+        date: $.date as Date,
+        "logged in": $."logged in" as Time replace "Z" with "",
+        "logged off": if(!isEmpty($."logged off"))$."logged off" as Time replace "Z" with "" else null
+    }
+)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="mapResponseWithDates" doc:id="20f43873-18de-4571-96cc-b1c551692062" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+(vars.dates map ((item, index) -> 
+{
+    (payload filter ( $.*date contains item)),
+    date: item
+    
+}
+) ) map {
+    "DATE": $.date,
+    "START TIME": $."logged in",
+    "END TIME": $."logged off"
+}
+]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="lastDayOfMonth" ><![CDATA[%dw 2.0
+import * from dw::core::Dates
+output application/json
+---
+(vars.req_day + |P1M| - |P1D|) as Date]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<foreach doc:name="For Each with batch size 7(week)" doc:id="84c82976-1151-49a2-a8dc-964878df7d79" batchSize="7">
+			<ee:transform doc:name="batchOf7daysRecords" doc:id="03e5703b-07d8-439c-b3c6-11ed1eae6715" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+				</ee:message>
+				<ee:variables >
+					<ee:set-variable variableName="details" ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<set-variable value="${app.home}/file.pdf" doc:name="FilePath" doc:id="f0b351ee-2265-430e-8456-6ba0b6fb7729" variableName="FilePath"/>
+			<ee:transform doc:name="createTable" doc:id="8368524f-ac64-4676-a237-359167a856f0" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+var total = payload map(if($."END TIME" == null) 0 else ($."END TIME" - $."START TIME") as Number {unit: "hours"})
+output application/xml
+---
+{
+    table @(style: "width: 100%; border-collapse: collapse; margin-left: auto; margin-right: auto; font-family: Arial, Helvetica, sans-serif" ): {
+        tr @(bgcolor: "#ffffff",style: "color: black !important; font-size:12px; border: 1px solid rgb(191, 191, 191); padding-top: 2.9px; padding-bottom: 2.9px;
+  padding: 5.7px;"): {
+            th @(style: "border: 1pt solid rgb(191, 191, 191);") : "DATE",
+            th @(style: "border: 1pt solid rgb(191, 191, 191);") : "START TIME" ,
+            th @(style: "border: 1pt solid rgb(191, 191, 191);") : "END TIME",
+            th @(style: "border: 1pt solid rgb(191, 191, 191);") : "REGULAR HOURS",
+            th @(style: "border: 1pt solid rgb(191, 191, 191);") : "OVERTIME HOURS",
+            th @(style: "border: 1pt solid rgb(191, 191, 191);") : "TOTAL HOURS"
+        },
+         (payload map (item, index) -> {
+            tr @(align:"center", style: "color: black !important; font-size:12px; font-weight: 500; width:50%; padding-top: 2.9px; padding-bottom: 2.9px"): 
+            {
+                td @(style: "border: 1pt solid rgb(191, 191, 191);"): item."DATE",
+                td @(style: "border: 1pt solid rgb(191, 191, 191);"): if(index == 5 or index == 6) "WEEK OFF" else if (item."START TIME" == null) " " else item."START TIME",
+                td @(style: "border: 1pt solid rgb(191, 191, 191);"): if(index == 5 or index == 6) "WEEK OFF" else if (item."END TIME" == null) " " else item."END TIME",
+                td @(style: "border: 1pt solid rgb(191, 191, 191);"): if (item."END TIME" == null) " " else (item."END TIME" - item."START TIME") as Number {unit: "hours"} ++ " hours",
+                td @(style: "border: 1pt solid rgb(191, 191, 191);"): " ",
+                td @(style: "border: 1pt solid rgb(191, 191, 191);"): if (item."END TIME" == null) 0 else (item."END TIME" - item."START TIME") as Number {unit: "hours"} ++ " hours"
+                
+              }
+        }),
+        tr @(bgcolor: "#ffffff",style: "color: black !important; font-size:16px; border: 1px solid #ddd; padding-top: 11px; padding-bottom: 11px;
+  padding: 8px; border: 1pt solid rgb(191, 191, 191);"): {
+  	th @(colspan: 5,style: "border: 1pt solid rgb(191, 191, 191);"): "TOTAL",
+  	th @(style: "border: 1pt solid rgb(191, 191, 191);"): sum(total) ++ " hours"
+  }
+        }
+        }
+]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<parse-template doc:name="makeHtmlTemplate" doc:id="3036c12b-1a63-43a2-b011-64575b6413a9" outputMimeType="text/html">
+				<content >&lt;html&gt;
+
+&lt;style&gt;
+table.center {
+  margin-left: auto; 
+  margin-right: auto;
+}
+&lt;/style&gt;
+&lt;p style='margin-top:3.0pt;margin-right:5cm;margin-bottom:3.0pt;margin-left:5cm;font-size:12px;font-family:&quot;Calibri&quot;,&quot;sans-serif&quot;;'&gt;&lt;span style='font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;'&gt;&amp;nbsp;&lt;/span&gt;&lt;/p&gt;
+&lt;p style='margin-top:3.0pt;margin-right:0cm;margin-bottom:3.0pt;margin-left:0cm;text-align:right;font-size:24px;font-family:&quot;Calibri Light&quot;,&quot;sans-serif&quot;;color:#3B3838;'&gt;&lt;span style='font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;'&gt;Time Sheet&lt;/span&gt;&lt;/p&gt;
+&lt;p style='margin-top:3.0pt;margin-right:0cm;margin-bottom:3.0pt;margin-left:0cm;text-align:right;font-size:12px;font-family:&quot;Calibri Light&quot;,&quot;sans-serif&quot;;color:#5A5A5A;'&gt;&lt;span style='font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;'&gt;Week Of: #[vars.details.DATE[0]] &amp;mdash; #[vars.details.DATE[6]]&lt;/span&gt;&lt;/p&gt;
+&lt;h1 style='margin-top:3.0pt;margin-right:0cm;margin-bottom:3.0pt;margin-left:0cm;font-size:13px;font-family:&quot;Calibri Light&quot;,&quot;sans-serif&quot;;font-weight:normal;'&gt;&lt;strong&gt;&lt;span style='font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;'&gt;OPTIME-TECH, LLC&lt;/span&gt;&lt;/strong&gt;&lt;/h1&gt;
+&lt;p style='margin-top:0cm;margin-right:0cm;margin-bottom:36.0pt;margin-left:0cm;font-size:12px;font-family:&quot;Calibri&quot;,&quot;sans-serif&quot;;'&gt;&lt;span style='font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;'&gt;280 SHUMAN BLVD, SUITE 280&lt;br&gt;&amp;nbsp;NAPERVILLE, IL 60563&lt;br&gt;&amp;nbsp;630-219-1317&lt;br&gt;&amp;nbsp;&lt;/span&gt;&lt;/p&gt;
+&lt;table style=&quot;width:100.0%;border-collapse:collapse;border:none;margin-left:auto;margin-right:auto;&quot;&gt;
+    &lt;tbody&gt;
+        &lt;tr&gt;
+            &lt;td style=&quot;width: 233.55pt;border: 1pt solid rgb(191, 191, 191);padding: 2.9pt 2.9pt 2.9pt 5.75pt;height: 14.4pt;vertical-align: top;&quot;&gt;
+                &lt;h3 style='margin-top:3.0pt;margin-right:0cm;margin-bottom:3.0pt;margin-left:0cm;font-size:12px;font-family:&quot;Calibri Light&quot;,&quot;sans-serif&quot;;font-weight:normal;'&gt;&lt;span style='font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;'&gt;Employee name: #[vars.employeeInfo.name]&lt;/span&gt;&lt;/h3&gt;
+            &lt;/td&gt;
+            &lt;td style=&quot;width: 233.95pt;border-top: 1pt solid rgb(191, 191, 191);border-right: 1pt solid rgb(191, 191, 191);border-bottom: 1pt solid rgb(191, 191, 191);border-image: initial;border-left: none;padding: 2.9pt 2.9pt 2.9pt 5.75pt;height: 14.4pt;vertical-align: top;&quot;&gt;
+                &lt;h3 style='margin-top:3.0pt;margin-right:0cm;margin-bottom:3.0pt;margin-left:0cm;font-size:12px;font-family:&quot;Calibri Light&quot;,&quot;sans-serif&quot;;font-weight:normal;'&gt;&lt;span style='font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;'&gt;Title: #[vars.employeeInfo.title]&lt;/span&gt;&lt;/h3&gt;
+            &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+            &lt;td style=&quot;width: 233.55pt;border-right: 1pt solid rgb(191, 191, 191);border-bottom: 1pt solid rgb(191, 191, 191);border-left: 1pt solid rgb(191, 191, 191);border-image: initial;border-top: none;padding: 2.9pt 2.9pt 2.9pt 5.75pt;height: 14.4pt;vertical-align: top;&quot;&gt;
+                &lt;h3 style='margin-top:3.0pt;margin-right:0cm;margin-bottom:3.0pt;margin-left:0cm;font-size:12px;font-family:&quot;Calibri Light&quot;,&quot;sans-serif&quot;;font-weight:normal;'&gt;&lt;span style='font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;'&gt;Employee number:NA&lt;/span&gt;&lt;/h3&gt;
+            &lt;/td&gt;
+            &lt;td style=&quot;width: 233.95pt;border-top: none;border-left: none;border-bottom: 1pt solid rgb(191, 191, 191);border-right: 1pt solid rgb(191, 191, 191);padding: 2.9pt 2.9pt 2.9pt 5.75pt;height: 14.4pt;vertical-align: top;&quot;&gt;
+                &lt;h3 style='margin-top:3.0pt;margin-right:0cm;margin-bottom:3.0pt;margin-left:0cm;font-size:12px;font-family:&quot;Calibri Light&quot;,&quot;sans-serif&quot;;font-weight:normal;'&gt;&lt;span style='font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;'&gt;Status: APPROVED&lt;/span&gt;&lt;/h3&gt;
+            &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+            &lt;td style=&quot;width: 233.55pt;border-right: 1pt solid rgb(191, 191, 191);border-bottom: 1pt solid rgb(191, 191, 191);border-left: 1pt solid rgb(191, 191, 191);border-image: initial;border-top: none;padding: 2.9pt 2.9pt 2.9pt 5.75pt;height: 14.4pt;vertical-align: top;&quot;&gt;
+                &lt;h3 style='margin-top:3.0pt;margin-right:0cm;margin-bottom:3.0pt;margin-left:0cm;font-size:12px;font-family:&quot;Calibri Light&quot;,&quot;sans-serif&quot;;font-weight:normal;'&gt;&lt;span style='font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;'&gt;Department: IT&lt;/span&gt;&lt;/h3&gt;
+            &lt;/td&gt;
+            &lt;td style=&quot;width: 233.95pt;border-top: none;border-left: none;border-bottom: 1pt solid rgb(191, 191, 191);border-right: 1pt solid rgb(191, 191, 191);padding: 2.9pt 2.9pt 2.9pt 5.75pt;height: 14.4pt;vertical-align: top;&quot;&gt;
+                &lt;h3 style='margin-top:3.0pt;margin-right:0cm;margin-bottom:3.0pt;margin-left:0cm;font-size:12px;font-family:&quot;Calibri Light&quot;,&quot;sans-serif&quot;;font-weight:normal;'&gt;&lt;span style='font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;'&gt;Supervisor: #[vars.employeeInfo.supervisor]&lt;/span&gt;&lt;/h3&gt;
+            &lt;/td&gt;
+        &lt;/tr&gt;
+    &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p style='margin-top:3.0pt;margin-right:5cm;margin-bottom:3.0pt;margin-left:5cm;font-size:12px;font-family:&quot;Calibri&quot;,&quot;sans-serif&quot;;'&gt;&lt;span style='font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;'&gt;&amp;nbsp;&lt;/span&gt;&lt;/p&gt;
+
+ #[payload]
+ 
+&lt;table style=&quot;width:100.0%;border-collapse:collapse;border:none;margin-left:auto;margin-right:auto;&quot;&gt;
+    &lt;tbody&gt;
+        &lt;tr&gt;
+            
+            &lt;td style=&quot;width:128.1pt;border:none;border-bottom:none;padding:2.9pt 2.9pt 2.9pt 5.75pt;height:  34.55pt;&quot;&gt;
+                &lt;h3 style='margin-top:3.0pt;margin-right:0cm;margin-bottom:3.0pt;margin-left:0cm;font-size:12px;font-family:&quot;Calibri Light&quot;,&quot;sans-serif&quot;;font-weight:normal;'&gt;&lt;span style='font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;'&gt;&amp;nbsp;&lt;/span&gt;&lt;/h3&gt;
+            &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+            
+            &lt;td style=&quot;width:128.1pt;border:none;border-bottom:none;padding:2.9pt 2.9pt 2.9pt 5.75pt;height:  34.55pt;&quot;&gt;
+                &lt;h3 style='margin-top:3.0pt;margin-right:0cm;margin-bottom:3.0pt;margin-left:0cm;font-size:12px;font-family:&quot;Calibri Light&quot;,&quot;sans-serif&quot;;font-weight:normal;'&gt;&lt;span style='font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;'&gt;&amp;nbsp;&lt;/span&gt;&lt;/h3&gt;
+            &lt;/td&gt;
+        &lt;/tr&gt;
+        
+        &lt;tr&gt;
+            &lt;td style=&quot;width: 339.4pt;border-right: 1pt solid rgb(191, 191, 191);border-top: 1pt solid rgb(191, 191, 191);border-bottom: 1pt solid rgb(191, 191, 191);border-left: 1pt solid rgb(191, 191, 191);border-image: initial;border-top: none;padding: 2.9pt 2.9pt 2.9pt 5.75pt;height: 14.4pt;vertical-align: top;&quot;&gt;
+                &lt;h3 style='margin-top:3.0pt;margin-right:0cm;margin-bottom:3.0pt;margin-left:0cm;font-size:12px;font-family:&quot;Calibri Light&quot;,&quot;sans-serif&quot;;font-weight:normal;'&gt;&lt;span style='font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;'&gt;Employee signature: #[vars.employeeInfo.name]&lt;/span&gt;&lt;/h3&gt;
+            &lt;/td&gt;
+            &lt;td style=&quot;width: 128.1pt;border-top: 1pt solid rgb(191, 191, 191);border-left: none;border-bottom: 1pt solid rgb(191, 191, 191);border-right: 1pt solid rgb(191, 191, 191);padding: 2.9pt 2.9pt 2.9pt 5.75pt;height: 14.4pt;vertical-align: top;&quot;&gt;
+                &lt;h3 style='margin-top:3.0pt;margin-right:0cm;margin-bottom:3.0pt;margin-left:0cm;font-size:12px;font-family:&quot;Calibri Light&quot;,&quot;sans-serif&quot;;font-weight:normal;'&gt;&lt;span style='font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;'&gt;Date: #[vars.lastDayOfMonth]&lt;/span&gt;&lt;/h3&gt;
+            &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+            &lt;td style=&quot;width: 339.4pt;border-right: 1pt solid rgb(191, 191, 191);border-bottom: 1pt solid rgb(191, 191, 191);border-left: 1pt solid rgb(191, 191, 191);border-image: initial;border-top: none;padding: 2.9pt 2.9pt 2.9pt 5.75pt;height: 14.4pt;vertical-align: top;&quot;&gt;
+                &lt;h3 style='margin-top:3.0pt;margin-right:0cm;margin-bottom:3.0pt;margin-left:0cm;font-size:12px;font-family:&quot;Calibri Light&quot;,&quot;sans-serif&quot;;font-weight:normal;'&gt;&lt;span style='font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;'&gt;Supervisor signature: #[vars.employeeInfo.supervisor]&lt;/span&gt;&lt;/h3&gt;
+            &lt;/td&gt;
+            &lt;td style=&quot;width: 128.1pt;border-top: none;border-left: none;border-bottom: 1pt solid rgb(191, 191, 191);border-right: 1pt solid rgb(191, 191, 191);padding: 2.9pt 2.9pt 2.9pt 5.75pt;height: 14.4pt;vertical-align: top;&quot;&gt;
+                &lt;h3 style='margin-top:3.0pt;margin-right:0cm;margin-bottom:3.0pt;margin-left:0cm;font-size:12px;font-family:&quot;Calibri Light&quot;,&quot;sans-serif&quot;;font-weight:normal;'&gt;&lt;span style='font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;'&gt;Date: #[vars.lastDayOfMonth]&lt;/span&gt;&lt;/h3&gt;
+            &lt;/td&gt;
+        &lt;/tr&gt;
+    &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p style='margin-top:3.0pt;margin-right:0cm;margin-bottom:3.0pt;margin-left:0cm;font-size:12px;font-family:&quot;Calibri&quot;,&quot;sans-serif&quot;;'&gt;&lt;span style='font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;'&gt;&amp;nbsp;&lt;/span&gt;&lt;/p&gt;
+&lt;p style='margin-top:3.0pt;margin-right:0cm;margin-bottom:3.0pt;margin-left:0cm;font-size:12px;font-family:&quot;Calibri&quot;,&quot;sans-serif&quot;;'&gt;&lt;span style='font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;'&gt;&amp;nbsp;&lt;/span&gt;&lt;/p&gt;
+&lt;p style='margin-top:3.0pt;margin-right:0cm;margin-bottom:3.0pt;margin-left:0cm;font-size:12px;font-family:&quot;Calibri&quot;,&quot;sans-serif&quot;;'&gt;&lt;span style='font-family:&quot;Arial&quot;,&quot;sans-serif&quot;;'&gt;&amp;nbsp;&lt;/span&gt;&lt;/p&gt;
+
+
+&lt;/html&gt;
+
+</content>
+			</parse-template>
+			<java:invoke-static doc:name="invokeJavaClassHtmltoDoc" doc:id="2d751868-0ced-4851-b7b7-5c2239904d5a" class="muledemoclass.HtmlToDoc" method="main(java.lang.String,java.lang.String)">
+				<java:args><![CDATA[#[{
+	args: payload as String,
+	FilePath: vars.FilePath
+}]]]></java:args>
+			</java:invoke-static>
+			<file:write doc:name="writeToLocalDisc" doc:id="56f84865-34f1-4ff1-95b6-159a188ad9be" config-ref="File_Config" path='#[vars.employeeInfo.name ++ "_Timesheet_" ++ vars.req_month ++ vars.counter ++ ".doc"]' />
+		</foreach>
+		<parse-template doc:name="response" doc:id="7cf66e33-39e0-430b-9c9d-8bf7b79008d6" outputMimeType="text/html">
+			<content >&lt;html&gt;
+&lt;head&gt;
+&lt;title&gt;Page title&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;h1&gt;Timesheet created&lt;/h1&gt;
+&lt;/body&gt;
+&lt;/html&gt;</content>
+		</parse-template>
+	</flow>
+</mule>
